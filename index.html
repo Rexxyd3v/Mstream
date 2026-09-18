@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FreeMovies</title>
+</head>
+
+<body>
+
+    <header>
+        <h1>FreeMovies</h1>
+
+        <div class="search-box">
+            <input
+                type="text"
+                id="searchInput"
+                placeholder="Search movies..."
+            >
+            <button id="searchButton" type="button">Search</button>
+        </div>
+    </header>
+
+    <main>
+
+        <section>
+            <h2 id="sectionTitle">Popular Movies</h2>
+            <div id="movieGrid"></div>
+        </section>
+
+        <section id="details" hidden>
+
+            <div class="details-content">
+
+                <img id="detailPoster" src="" alt="Movie Poster">
+
+                <div>
+                    <h2 id="detailTitle"></h2>
+
+                    <p id="detailOverview"></p>
+
+                    <p>
+                        <strong>Release:</strong>
+                        <span id="detailDate"></span>
+                    </p>
+
+                    <p>
+                        <strong>Rating:</strong>
+                        <span id="detailRating"></span>
+                    </p>
+
+                    <button id="watchButton" type="button">
+                        Watch Now
+                    </button>
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <script type="module" src="./src/js/app.js"></script>
+
+</body>
+</html>
