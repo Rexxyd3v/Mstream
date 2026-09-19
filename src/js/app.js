@@ -1,3 +1,5 @@
+import { openPlayer } from "./player.js";
+
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
 const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500";
 const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
@@ -168,25 +170,8 @@ async function showMovieDetails(movieId) {
                 ? movie.vote_average.toFixed(1)
                 : "N/A";
 
-        /*
-         * This demonstrates how the TMDB ID maps
-         * to the URL pattern you provided.
-         *
-         * Do not automatically embed third-party
-         * streaming content unless you have permission
-         * to use that service.
-         */
-        const cinemaOSUrl =
-            `https://cinemaos.tech/player/${movieId}`;
-
         document.getElementById("watchButton").onclick = () => {
-
-            window.open(
-                cinemaOSUrl,
-                "_blank",
-                "noopener,noreferrer"
-            );
-
+            openPlayer(movie.id, "movie", movie.title);
         };
 
         document.getElementById("details").hidden = false;

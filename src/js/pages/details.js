@@ -1,3 +1,5 @@
+import { openPlayer } from "../player.js";
+
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
 const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500";
 const FAVORITES_STORAGE_KEY = "freeMoviesFavorites";
@@ -105,7 +107,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         if (watchButton) {
             watchButton.onclick = () => {
-                window.open(`https://cinemaos.tech/player/${mediaId}`, "_blank", "noopener,noreferrer");
+                openPlayer(media.id, mediaType, item.title, media.seasons);
             };
         }
     } catch (error) {
