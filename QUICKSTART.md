@@ -1,5 +1,32 @@
 # FreeMovies Quick Start
 
+## For A Collaborator After Git Clone
+
+Run these commands from PowerShell:
+
+```powershell
+git clone <repository-url>
+cd FreeMovies
+npm install
+Copy-Item .env.example .env
+```
+
+Open `.env` and add the collaborator's own TMDB API key:
+
+```env
+VITE_TMDB_API_KEY=their_tmdb_api_key_here
+```
+
+Then start the project:
+
+```powershell
+npm run dev
+```
+
+Open the local URL printed by Vite, usually `http://127.0.0.1:5173/`.
+
+`npm install` reads `package.json` and `package-lock.json`, then creates the local `node_modules/` folder. The `node_modules/` folder and `.env` file are intentionally not included in Git, so every collaborator creates their own copy locally.
+
 ## 1. Install dependencies
 
 From the project folder:

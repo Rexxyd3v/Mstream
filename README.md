@@ -62,6 +62,26 @@ VITE_TMDB_API_KEY=your_tmdb_api_key_here
 
 The `VITE_` prefix is required because Vite exposes only variables with that prefix to browser code. Do not commit `.env` or share its API key.
 
+## Collaborator Setup After Clone
+
+After cloning the repository, a collaborator should run:
+
+```powershell
+git clone <repository-url>
+cd FreeMovies
+npm install
+Copy-Item .env.example .env
+npm run dev
+```
+
+They must then add their own TMDB key to `.env`:
+
+```env
+VITE_TMDB_API_KEY=their_tmdb_api_key_here
+```
+
+`npm install` uses `package.json` and `package-lock.json` to create `node_modules/` locally. `node_modules/` and `.env` are intentionally ignored by Git, so they are not downloaded during `git clone` and should not be committed.
+
 ## Development
 
 Start the Vite development server:

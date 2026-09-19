@@ -3,29 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TV Series | FreeMovies</title>
+    <title>TV Series | MStream</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../dist/output.css">
 </head>
-<body>
-    <header>
-        <h1>FreeMovies</h1>
-        <nav aria-label="Main navigation">
-            <a href="../index.html">Home</a>
-            <a href="./movies.html">Movies</a>
-            <a href="./tv-series.html" aria-current="page">TV Series</a>
-            <a href="./favorites.html">Favorites</a>
-        </nav>
+<body class="min-h-screen bg-neutral-950 text-neutral-100">
+
+    <header class="border-b border-neutral-800 bg-neutral-900">
+        <div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+            <a href="./home.html" class="text-lg font-semibold text-white">MStream</a>
+            <nav class="flex items-center gap-1 text-sm">
+                <a href="./home.html" class="rounded-md px-3 py-1.5 text-neutral-400 hover:text-white">Home</a>
+                <a href="./movies.html" class="rounded-md px-3 py-1.5 text-neutral-400 hover:text-white">Movies</a>
+                <a href="./tv-series.html" class="rounded-md bg-neutral-800 px-3 py-1.5 text-white">TV Series</a>
+                <a href="./favorites.html" class="rounded-md px-3 py-1.5 text-neutral-400 hover:text-white">Favorites</a>
+            </nav>
+        </div>
     </header>
 
-    <main>
-        <h2>TV Series</h2>
-        <section id="seriesGrid" aria-label="TV series list">
-            <article>
-                <a href="./details.html">
-                    <img src="https://image.tmdb.org/t/p/w500/1X4h40fcB4wwXt8Q2kwXgk0yYPO.jpg" alt="TV series poster">
-                    <h3>TV series title</h3>
-                </a>
-            </article>
+    <main class="mx-auto max-w-6xl px-6 py-8">
+
+        <section class="mb-8 rounded-lg border border-neutral-800 bg-neutral-900 p-8">
+            <p class="mb-2 text-xs uppercase tracking-widest text-neutral-500">Stream</p>
+            <h1 class="text-3xl font-bold text-white">TV Series</h1>
+            <p class="mt-2 text-sm text-neutral-400">Binge-worthy stories from every genre.</p>
         </section>
+
+        <section id="seriesGrid" aria-label="TV series list" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"></section>
+
     </main>
 
     <script type="module" src="../src/js/pages/tv-series.js"></script>
