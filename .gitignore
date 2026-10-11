@@ -3,5 +3,7 @@ dist/
 .DS_Store
 *.log
 npm-debug.log*
-.env
+
+# Local environment files may contain API credentials.
+.env*
 !.env.example

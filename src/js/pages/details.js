@@ -1,8 +1,10 @@
 import { openPlayer } from "../player.js";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "../firebase.js";
+import { isUserFavorite, removeUserFavorite, saveUserFavorite } from "../favorites-store.js";
 
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
 const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500";
-const FAVORITES_STORAGE_KEY = "freeMoviesFavorites";
 const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
 
 if (!TMDB_API_KEY) {
@@ -13,54 +15,38 @@ const urlParams = new URLSearchParams(window.location.search);
 const mediaType = urlParams.get("type") || "movie";
 const mediaId = urlParams.get("id");
 
-function getFavorites() {
-    try {
-        return JSON.parse(localStorage.getItem(FAVORITES_STORAGE_KEY) || "[]");
-    } catch {
-        return [];
-    }
-}
-
-function saveFavorites(favorites) {
-    localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(favorites));
-}
-
-function isFavorite(id, type) {
-    return getFavorites().some((item) => item.id === Number(id) && item.type === type);
-}
-
-function toggleFavorite(item) {
-    const favorites = getFavorites();
-    const exists = favorites.some((favorite) => favorite.id === item.id && favorite.type === item.type);
-
-    if (exists) {
-        const updatedFavorites = favorites.filter((favorite) => !(favorite.id === item.id && favorite.type === item.type));
-        saveFavorites(updatedFavorites);
-        return false;
-    }
-
-    favorites.push(item);
-    saveFavorites(favorites);
-    return true;
-}
-
-function renderFavoriteButton(media) {
+async function renderFavoriteButton(media, user) {
     const favoriteButton = document.getElementById("favoriteButton");
 
     if (!favoriteButton) {
         return;
     }
 
-    const favorite = isFavorite(media.id, media.type);
+    if (!user) {
+        favoriteButton.textContent = "Log in to favorite";
+        favoriteButton.onclick = () => document.getElementById("authUserButton")?.click();
+        return;
+    }
+
+    const favorite = await isUserFavorite(user.uid, media);
     favoriteButton.textContent = favorite ? "Remove Favorite" : "Add to Favorites";
 
-    favoriteButton.onclick = () => {
-        const saved = toggleFavorite(media);
-        renderFavoriteButton(media);
-        if (saved) {
-            alert("Added to favorites.");
-        } else {
-            alert("Removed from favorites.");
+    favoriteButton.onclick = async () => {
+        favoriteButton.disabled = true;
+        try {
+            if (favoriteButton.textContent === "Remove Favorite") {
+                await removeUserFavorite(user.uid, media);
+                alert("Removed from favorites.");
+            } else {
+                await saveUserFavorite(user.uid, media);
+                alert("Added to favorites.");
+            }
+            await renderFavoriteButton(media, user);
+        } catch (error) {
+            console.error(error);
+            alert("Could not update favorites. Check your Firestore rules.");
+        } finally {
+            favoriteButton.disabled = false;
         }
     };
 }
@@ -103,7 +89,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (date) date.textContent = item.releaseDate || "Unknown";
         if (rating) rating.textContent = item.voteAverage ? item.voteAverage.toFixed(1) : "N/A";
 
-        renderFavoriteButton(item);
+        if (auth) {
+            onAuthStateChanged(auth, (user) => {
+                renderFavoriteButton(item, user).catch((error) => {
+                    console.error("Could not load favorite state.", error);
+                });
+            });
+        } else {
+            renderFavoriteButton(item, null);
+        }
 
         if (watchButton) {
             watchButton.onclick = () => {
@@ -114,4 +108,3 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.error(error);
     }
 });
-

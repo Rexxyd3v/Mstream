@@ -92,67 +92,39 @@ function displayMovies(movies) {
 
     grid.innerHTML = "";
 
-    movies.forEach((movie) => {
+    movies.forEach((movie, index) => {
         if (!movie.poster_path) {
             return;
         }
 
         const card = document.createElement("article");
-        card.className = "cursor-pointer overflow-hidden rounded-lg border border-neutral-800 bg-neutral-900 transition hover:border-neutral-600";
+        card.className = "cursor-pointer overflow-hidden";
+        card.style.animation = `cardFadeIn 0.6s ease-out backwards ${(index * 0.05)}s`;
         card.innerHTML = `
             <img src="${IMAGE_BASE_URL}${movie.poster_path}" alt="${movie.title}" class="h-64 w-full object-cover">
             <div class="p-4">
-                <h3 class="text-sm font-semibold text-white">${movie.title}</h3>
-                <div class="mt-1 flex items-center justify-between text-xs text-neutral-500">
+                <div class="flex items-start justify-between gap-3">
+                    <h3 class="text-sm font-semibold text-white">${movie.title}</h3>
+                    <button type="button" class="home-watch-button shrink-0" aria-label="Watch ${movie.title}">
+                        Watch
+                    </button>
+                </div>
+                <div class="mt-2 flex items-center justify-between text-xs text-neutral-500">
                     <span>${movie.release_date || "Unknown"}</span>
                     <span>${movie.vote_average?.toFixed(1) || "N/A"}</span>
                 </div>
             </div>
         `;
 
-        card.addEventListener("click", () => {
-            showMovieDetails(movie.id);
-        });
+        const watchMovie = () => {
+            openPlayer(movie.id, "movie", movie.title);
+        };
 
+        card.addEventListener("click", watchMovie);
+        card.querySelector(".home-watch-button")?.addEventListener("click", (event) => {
+            event.stopPropagation();
+            watchMovie();
+        });
         grid.appendChild(card);
     });
-}
-
-async function showMovieDetails(movieId) {
-    const url = `${TMDB_BASE_URL}/movie/${movieId}?api_key=${TMDB_API_KEY}&language=en-US`;
-
-    try {
-        const response = await fetch(url);
-        const movie = await response.json();
-
-        const poster = document.getElementById("detailPoster");
-        const title = document.getElementById("detailTitle");
-        const overview = document.getElementById("detailOverview");
-        const date = document.getElementById("detailDate");
-        const rating = document.getElementById("detailRating");
-        const watchButton = document.getElementById("watchButton");
-        const details = document.getElementById("details");
-
-        if (poster) {
-            poster.src = movie.poster_path ? IMAGE_BASE_URL + movie.poster_path : "";
-        }
-
-        if (title) title.textContent = movie.title;
-        if (overview) overview.textContent = movie.overview || "No description available.";
-        if (date) date.textContent = movie.release_date || "Unknown";
-        if (rating) rating.textContent = movie.vote_average ? movie.vote_average.toFixed(1) : "N/A";
-
-        if (watchButton) {
-            watchButton.onclick = () => {
-                openPlayer(movie.id, "movie", movie.title);
-            };
-        }
-
-        if (details) {
-            details.hidden = false;
-            details.scrollIntoView({ behavior: "smooth" });
-        }
-    } catch (error) {
-        console.error(error);
-    }
 }

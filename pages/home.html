@@ -4,70 +4,60 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home | MStream</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="../assets/letter-m.png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../dist/output.css">
 </head>
-<body class="min-h-screen bg-neutral-950 text-neutral-100">
-    <header class="glass-nav sticky top-0 z-50 bg-amber-300">
-        <div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-4 ">
-            <span class="text-lg font-semibold text-white">MStream</span>
-            <nav class="flex items-center gap-1 text-sm">
-                <a href="./home.html" class="rounded-md bg-neutral-800 px-3 py-1.5 text-white">Home</a>
-                <a href="./movies.html" class="rounded-md px-3 py-1.5 text-neutral-400 hover:text-white">Movies</a>
-                <a href="./tv-series.html" class="rounded-md px-3 py-1.5 text-neutral-400 hover:text-white">TV Series</a>
-                <a href="./favorites.html" class="rounded-md px-3 py-1.5 text-neutral-400 hover:text-white">Favorites</a>
+<body class="min-h-screen bg-black text-white">
+    <header class="glass-nav sticky top-0 z-50">
+        <div class="site-nav mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-4">
+            <a href="./home.html" class="brand"><img class="brand-logo" src="../assets/letter-m.png" alt="" aria-hidden="true"><span>MStream</span></a>
+            <nav aria-label="Main navigation" class="nav-links">
+                <a href="./home.html" class="bg-neutral-800">Home</a>
+                <a href="./movies.html">Movies</a>
+                <a href="./tv-series.html">TV Series</a>
+                <a href="./favorites.html">Favorites</a>
             </nav>
-            <div class="flex items-center gap-2">
+            <div class="nav-search">
                 <input
                     type="text"
                     id="searchInput"
                     placeholder="Search..."
-                    class="w-48 rounded-md border border-neutral-700 bg-neutral-800 px-3 py-1.5 text-sm text-white placeholder:text-neutral-500 focus:border-neutral-500 focus:outline-none"
                 >
-                <button id="searchButton" type="button" class="rounded-md bg-white px-3 py-1.5 text-sm font-medium text-black hover:bg-neutral-200">
-                    Search
-                </button>
+                <button id="searchButton" type="button">Search</button>
             </div>
         </div>
     </header>
 
-    <main class="mx-auto max-w-6xl px-6 py-8">
+    <main class="mx-auto max-w-7xl px-6">
 
         <!-- Hero -->
-        <section class="mb-8 rounded-lg border border-neutral-800 bg-neutral-900 p-8">
-            <p class="mb-2 text-xs uppercase tracking-widest text-neutral-500">Featured</p>
-            <h1 class="text-3xl font-bold text-white">Find your next favorite movie.</h1>
-            <p class="mt-2 text-sm text-neutral-400">Stream movies and TV series for free.</p>
+        <section class="home-hero">
+            <div class="hero-copy">
+                <p class="eyebrow"><span class="eyebrow-dot"></span> YOUR NEXT MOVIE NIGHT STARTS HERE</p>
+                <h1>Stories worth<br><span>staying in for.</span></h1>
+                <p class="hero-description">A little escape is always close. Find your next favorite film or series, all in one place.</p>
+                <div class="hero-actions">
+                    <a href="./movies.html" class="hero-primary">Explore movies <span aria-hidden="true">↗</span></a>
+                    <a href="./tv-series.html" class="hero-secondary">Browse series</a>
+                </div>
+                <div class="hero-note"><span class="hero-note-line"></span> HANDPICKED FOR YOUR NEXT WATCH</div>
+            </div>
         </section>
 
         <!-- Grid section -->
-        <section class="rounded-lg border border-neutral-800 bg-neutral-900 p-6">
+        <section class="catalog-section">
             <div class="mb-6 flex items-center justify-between">
-                <h2 id="sectionTitle" class="text-lg font-semibold text-white">Popular Movies</h2>
+                <div><p class="eyebrow section-eyebrow">THE GOOD STUFF</p><h2 id="sectionTitle" class="text-lg font-semibold text-white">Popular Movies</h2></div>
+                <a href="./movies.html" class="section-link">View all <span aria-hidden="true">↗</span></a>
             </div>
             <div id="movieGrid" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"></div>
-        </section>
-
-        <!-- Detail panel -->
-        <section id="details" hidden class="mt-8 rounded-lg border border-neutral-800 bg-neutral-900 p-6">
-            <div class="flex flex-col gap-6 md:flex-row">
-                <img id="detailPoster" src="" alt="Poster" class="h-80 w-full rounded-md object-cover md:w-52">
-                <div class="flex-1">
-                    <h2 id="detailTitle" class="text-2xl font-bold text-white"></h2>
-                    <p id="detailOverview" class="mt-3 text-sm leading-6 text-neutral-400"></p>
-                    <div class="mt-4 space-y-1 text-sm text-neutral-400">
-                        <p><span class="text-white">Release:</span> <span id="detailDate"></span></p>
-                        <p><span class="text-white">Rating:</span> <span id="detailRating"></span></p>
-                    </div>
-                    <button id="watchButton" type="button" class="mt-5 rounded-md bg-white px-5 py-2 text-sm font-medium text-black hover:bg-neutral-200">
-                        Watch Now
-                    </button>
-                </div>
-            </div>
         </section>
 
     </main>
 
     <script type="module" src="../src/js/pages/home.js"></script>
+    <script type="module" src="../src/js/effects.js"></script>
+    <script type="module" src="../src/js/auth.js"></script>
 </body>
 </html>

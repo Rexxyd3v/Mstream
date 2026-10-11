@@ -36,30 +36,38 @@ function renderMovies(movies, grid) {
         return;
     }
 
-    movies.forEach((movie) => {
+    movies.forEach((movie, index) => {
         if (!movie.poster_path) {
             return;
         }
 
         const article = document.createElement("article");
-        article.className = "group overflow-hidden rounded-3xl border border-white/6 bg-neutral-900/80 shadow-[0_18px_40px_rgba(0,0,0,0.5)] card-hover card-inner-glow";
+        article.className = "group overflow-hidden";
+        article.style.animation = `cardFadeIn 0.6s ease-out backwards ${(index * 0.05)}s`;
         article.innerHTML = `
-            <a href="./details.html?id=${movie.id}&type=movie" class="block">
+            <div class="relative overflow-hidden">
+                <a href="./details.html?id=${movie.id}&type=movie" class="block">
                 <div class="relative overflow-hidden">
-                    <img src="${IMAGE_BASE_URL}${movie.poster_path}" alt="${movie.title}" class="h-72 w-full object-cover transition duration-500 group-hover:scale-105">
-                    <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                    <span class="absolute bottom-3 right-3 flex items-center gap-1 rounded-full border border-amber-400/20 bg-black/60 px-2 py-0.5 text-[11px] font-semibold text-amber-400 backdrop-blur-sm">
-                        <svg class="h-3 w-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                        ${movie.vote_average?.toFixed(1) || "N/A"}
-                    </span>
+                    <img src="${IMAGE_BASE_URL}${movie.poster_path}" alt="${movie.title}" class="h-72 w-full object-cover transition duration-300 group-hover:scale-105">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 </div>
-                <div class="p-4">
+                </a>
+                <div class="movie-card-actions">
                     <h3 class="line-clamp-2 text-sm font-semibold text-white">${movie.title}</h3>
-                    <p class="mt-1.5 text-xs text-neutral-500">${movie.release_date || "Unknown"}</p>
+                    <div class="movie-card-buttons">
+                        <button type="button" class="movie-watch-button">Watch</button>
+                        <button type="button" class="movie-room-button">Watch Together</button>
+                    </div>
+                    <p class="mt-1.5 text-xs text-neutral-400">${movie.release_date || "Unknown"}</p>
                 </div>
-            </a>
+            </div>
         `;
+        article.querySelector(".movie-watch-button").addEventListener("click", () => {
+            window.openPlayer(movie.id, "movie", movie.title);
+        });
+        article.querySelector(".movie-room-button").addEventListener("click", () => {
+            window.dispatchEvent(new CustomEvent("watch-room-create", { detail: movie }));
+        });
         grid.appendChild(article);
     });
 }
-

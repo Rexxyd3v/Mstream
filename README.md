@@ -58,9 +58,18 @@ Then edit `.env`:
 
 ```env
 VITE_TMDB_API_KEY=your_tmdb_api_key_here
+VITE_FIREBASE_API_KEY=your_firebase_api_key
+VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your-firebase-project-id
+VITE_FIREBASE_STORAGE_BUCKET=your-firebase-project.firebasestorage.app
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
+VITE_FIREBASE_APP_ID=your_firebase_app_id
+VITE_FIREBASE_MEASUREMENT_ID=your_measurement_id
 ```
 
-The `VITE_` prefix is required because Vite exposes only variables with that prefix to browser code. Do not commit `.env` or share its API key.
+The `VITE_` prefix is required because Vite exposes only variables with that prefix to browser code. Never commit `.env`, `.env.local`, or other local environment files. They are ignored by Git; only `.env.example` with placeholders should be committed.
+
+Important: `VITE_*` values are bundled into the browser application and can be seen by users. Firebase Web API keys are client identifiers, not admin secrets. Restrict the Firebase key in Google Cloud Console and use Firebase Authentication and Firestore Security Rules. Keep TMDB keys behind a server-side proxy if they must remain private.
 
 ## Collaborator Setup After Clone
 
@@ -80,7 +89,7 @@ They must then add their own TMDB key to `.env`:
 VITE_TMDB_API_KEY=their_tmdb_api_key_here
 ```
 
-`npm install` uses `package.json` and `package-lock.json` to create `node_modules/` locally. `node_modules/` and `.env` are intentionally ignored by Git, so they are not downloaded during `git clone` and should not be committed.
+`npm install` uses `package.json` and `package-lock.json` to create `node_modules/` locally. `node_modules/` and local `.env*` files are intentionally ignored by Git, so they are not downloaded during `git clone` and should not be committed.
 
 ## Development
 
