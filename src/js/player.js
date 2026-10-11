@@ -55,6 +55,7 @@ let current = {
 };
 let loadingTimer;
 let autoHideTimer;
+let pendingPlaybackAction = null;
 
 function isFullscreen() {
     return Boolean(document.fullscreenElement || document.webkitFullscreenElement);
@@ -176,6 +177,7 @@ function buildOverlay() {
     overlay.querySelector("#cv-player-close").addEventListener("click", closePlayer);
     ["play", "pause", "stop"].forEach(action => {
         overlay.querySelector(`#cv-room-${action}`).addEventListener("click", () => {
+            applyPlaybackCommand(action);
             window.dispatchEvent(new CustomEvent("watch-room-command", {
                 detail: { roomId: current.roomId, action },
             }));
@@ -218,14 +220,15 @@ function buildOverlay() {
     ["fullscreenchange", "webkitfullscreenchange"].forEach(eventName => document.addEventListener(eventName, updateFullscreenUI));
 }
 
-window.addEventListener("player-playback-command", (event) => {
-    if (!current.roomId || event.detail?.action === undefined) return;
-    const action = event.detail.action;
+function applyPlaybackCommand(action) {
+    if (!current.roomId || !["play", "pause", "stop"].includes(action)) return;
+    pendingPlaybackAction = action;
     const messages = {
         play: [{ event: "command", func: "playVideo" }, { type: "play" }, "play"],
         pause: [{ event: "command", func: "pauseVideo" }, { type: "pause" }, "pause"],
         stop: [{ event: "command", func: "stopVideo" }, { type: "stop" }, "stop"],
     }[action] || [];
+    if (!iframe?.contentWindow) return;
     messages.forEach(message => {
         try {
             iframe?.contentWindow?.postMessage(message, "*");
@@ -234,6 +237,10 @@ window.addEventListener("player-playback-command", (event) => {
             console.warn("The stream provider rejected the playback command.", error);
         }
     });
+}
+
+window.addEventListener("player-playback-command", (event) => {
+    applyPlaybackCommand(event.detail?.action);
 });
 
 function showTopbar() {
@@ -265,7 +272,12 @@ function loadIframe() {
 
     window.setTimeout(() => {
         if (!overlay?.classList.contains("open")) return;
-        iframe.onload = () => loadingEl.classList.add("hidden");
+        iframe.onload = () => {
+            loadingEl.classList.add("hidden");
+            if (pendingPlaybackAction) {
+                window.setTimeout(() => applyPlaybackCommand(pendingPlaybackAction), 250);
+            }
+        };
         iframe.src = source;
         loadingTimer = window.setTimeout(() => {
             loadingEl.classList.add("hidden");

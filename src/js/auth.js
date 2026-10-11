@@ -104,6 +104,11 @@ function errorMessage(error) {
         "auth/invalid-credential": "The email or password is incorrect.",
         "auth/weak-password": "Use a password with at least 6 characters.",
         "auth/popup-closed-by-user": "The Google sign-in window was closed.",
+        "auth/popup-blocked": "Your browser blocked the Google sign-in popup. Allow popups for this site and try again.",
+        "auth/unauthorized-domain": "This Vercel domain is not authorized in Firebase. Add it under Authentication > Settings > Authorized domains.",
+        "auth/operation-not-allowed": "Google sign-in is not enabled. Enable Google under Firebase Authentication > Sign-in method.",
+        "auth/api-key-not-valid.-please-pass-a-valid-api-key.": "The Firebase API key in Vercel is invalid or restricted for this domain.",
+        "auth/network-request-failed": "Network request failed. Check the deployed site's connection and try again.",
     };
     return messages[error.code] || "Authentication failed. Please try again.";
 }
@@ -213,6 +218,7 @@ function initializeAuth() {
             }
             leaveAuthGate();
         } catch (error) {
+            console.error("[MStream Auth] Email sign-in failed:", error);
             setStatus(errorMessage(error), true);
         } finally {
             submit.disabled = false;
@@ -225,6 +231,7 @@ function initializeAuth() {
             await signInWithPopup(auth, googleProvider);
             leaveAuthGate();
         } catch (error) {
+            console.error("[MStream Auth] Google sign-in failed:", error);
             setStatus(errorMessage(error), true);
         }
     });
