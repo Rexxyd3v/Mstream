@@ -7,12 +7,22 @@ import {
 } from "firebase/auth";
 import { auth, googleProvider } from "./firebase.js";
 
+// profileMenu is rendered as a separate root element (appended to body)
+// so it is NOT clipped by the sticky nav's backdrop-filter stacking context.
 const authMarkup = `
     <div class="auth-controls">
         <button class="auth-user-button" id="authUserButton" type="button">Log in</button>
-        <div class="profile-menu" id="profileMenu" hidden>
-            <p class="profile-menu-label" id="profileMenuLabel">Signed in</p>
-            <button class="profile-signout" id="profileSignout" type="button">Sign out</button>
+    </div>
+    <div class="profile-menu" id="profileMenu" hidden>
+        <p class="profile-menu-label" id="profileMenuLabel">Signed in</p>
+        <button class="profile-signout" id="profileSignout" type="button">Sign out</button>
+        <div class="profile-signout-confirm" id="profileSignoutConfirm" hidden>
+            <p>Are you sure you want to sign out?</p>
+            <p class="signout-error" id="signoutError" role="alert" hidden></p>
+            <div class="profile-signout-actions">
+                <button type="button" id="cancelSignout">Cancel</button>
+                <button type="button" id="confirmSignout">Confirm sign out</button>
+            </div>
         </div>
     </div>
     <div class="auth-modal" id="authModal" hidden>
@@ -47,6 +57,7 @@ const authMarkup = `
 let isSignUpMode = false;
 const GUEST_MODE_KEY = "mstreamGuestMode:v2";
 let isAuthGate = true;
+let isSigningOut = false;
 
 function setStatus(message, isError = false) {
     const status = document.getElementById("authStatus");
@@ -113,6 +124,32 @@ function errorMessage(error) {
     return messages[error.code] || "Authentication failed. Please try again.";
 }
 
+/** Position the profile menu below the trigger button using fixed coords. */
+function positionMenu(button, menu) {
+    const rect = button.getBoundingClientRect();
+    menu.style.position = "fixed";
+    menu.style.top = (rect.bottom + 8) + "px";
+    menu.style.right = (window.innerWidth - rect.right) + "px";
+    menu.style.left = "auto";
+}
+
+function openMenu(button, menu) {
+    // Reset to initial signout state every time menu opens
+    const psEl = document.getElementById("profileSignout");
+    const pcEl = document.getElementById("profileSignoutConfirm");
+    const errEl = document.getElementById("signoutError");
+    if (psEl) psEl.hidden = false;
+    if (pcEl) pcEl.hidden = true;
+    if (errEl) errEl.hidden = true;
+
+    positionMenu(button, menu);
+    menu.hidden = false;
+}
+
+function closeMenu(menu) {
+    menu.hidden = true;
+}
+
 function renderSignedIn(user) {
     leaveAuthGate();
     const button = document.getElementById("authUserButton");
@@ -152,12 +189,15 @@ function renderSignedIn(user) {
     button.title = `Open profile menu for ${displayName}`;
     button.classList.add("is-signed-in");
     document.getElementById("profileMenuLabel").textContent = displayName;
-    document.getElementById("profileSignout").onclick = async () => {
-        await signOut(auth);
-    };
-    button.onclick = () => {
-        const menu = document.getElementById("profileMenu");
-        if (menu) menu.hidden = !menu.hidden;
+
+    const menu = document.getElementById("profileMenu");
+    button.onclick = (e) => {
+        e.stopPropagation();
+        if (menu.hidden) {
+            openMenu(button, menu);
+        } else {
+            closeMenu(menu);
+        }
     };
 }
 
@@ -170,7 +210,7 @@ function renderSignedOut() {
     button.classList.remove("is-signed-in");
     button.onclick = openModal;
     const menu = document.getElementById("profileMenu");
-    if (menu) menu.hidden = true;
+    if (menu) closeMenu(menu);
 }
 
 function initializeAuth() {
@@ -178,21 +218,65 @@ function initializeAuth() {
     if (!nav) return;
 
     nav.insertAdjacentHTML("beforeend", authMarkup);
-    // Keep the full-screen modal outside the sticky navigation stacking context.
-    // Otherwise its backdrop can cover the page while the dialog gets clipped or buried.
-    document.body.append(document.getElementById("authModal"));
+
+    // Move authModal AND profileMenu to document.body so they are NOT clipped
+    // by the sticky nav's backdrop-filter stacking context.
+    const menuEl = document.getElementById("profileMenu");
+    const modalEl = document.getElementById("authModal");
+    document.body.append(menuEl);
+    document.body.append(modalEl);
     document.body.classList.add("auth-gated");
+
+    // Close menu when clicking anywhere outside it or the auth button
+    document.addEventListener("click", (event) => {
+        const menu = document.getElementById("profileMenu");
+        const button = document.getElementById("authUserButton");
+        if (!menu || menu.hidden) return;
+        if (!menu.contains(event.target) && !button.contains(event.target)) {
+            closeMenu(menu);
+        }
+    });
+
     document.getElementById("authClose").addEventListener("click", closeModal);
     document.getElementById("authGuest").addEventListener("click", continueAsGuest);
-    document.addEventListener("click", (event) => {
-        const controls = document.querySelector(".auth-controls");
-        const menu = document.getElementById("profileMenu");
-        if (menu && controls && !controls.contains(event.target)) menu.hidden = true;
+
+    document.getElementById("profileSignout").addEventListener("click", () => {
+        document.getElementById("profileSignout").hidden = true;
+        document.getElementById("profileSignoutConfirm").hidden = false;
     });
-    document.getElementById("authToggle").addEventListener("click", () => setAuthMode(!isSignUpMode));
+
+    document.getElementById("cancelSignout").addEventListener("click", () => {
+        document.getElementById("profileSignoutConfirm").hidden = true;
+        document.getElementById("profileSignout").hidden = false;
+        document.getElementById("signoutError").hidden = true;
+    });
+
+    document.getElementById("confirmSignout").addEventListener("click", async (event) => {
+        const confirmButton = event.currentTarget;
+        confirmButton.disabled = true;
+        confirmButton.textContent = "Signing out...";
+        try {
+            isSigningOut = true;
+            sessionStorage.removeItem(GUEST_MODE_KEY);
+            await signOut(auth);
+            window.location.href = window.location.origin + "/pages/home.html";
+        } catch (error) {
+            isSigningOut = false;
+            console.error("[MStream Auth] Sign-out failed:", error);
+            const signoutError = document.getElementById("signoutError");
+            if (signoutError) {
+                signoutError.textContent = errorMessage(error);
+                signoutError.hidden = false;
+            }
+            confirmButton.disabled = false;
+            confirmButton.textContent = "Try again";
+        }
+    });
+
     document.getElementById("authModal").addEventListener("click", (event) => {
         if (event.target.id === "authModal") closeModal();
     });
+    document.getElementById("authToggle").addEventListener("click", () => setAuthMode(!isSignUpMode));
 
     if (!auth || !googleProvider) {
         document.getElementById("authUserButton").onclick = openModal;
@@ -216,6 +300,7 @@ function initializeAuth() {
             } else {
                 await signInWithEmailAndPassword(auth, email, password);
             }
+            sessionStorage.removeItem(GUEST_MODE_KEY);
             leaveAuthGate();
         } catch (error) {
             console.error("[MStream Auth] Email sign-in failed:", error);
@@ -226,17 +311,23 @@ function initializeAuth() {
     });
 
     document.getElementById("authGoogle").addEventListener("click", async () => {
+        const googleButton = document.getElementById("authGoogle");
+        googleButton.disabled = true;
         setStatus("Opening Google sign-in...");
         try {
             await signInWithPopup(auth, googleProvider);
+            sessionStorage.removeItem(GUEST_MODE_KEY);
             leaveAuthGate();
         } catch (error) {
             console.error("[MStream Auth] Google sign-in failed:", error);
             setStatus(errorMessage(error), true);
+        } finally {
+            googleButton.disabled = false;
         }
     });
 
     onAuthStateChanged(auth, (user) => {
+        if (isSigningOut) return;
         if (user) {
             renderSignedIn(user);
         } else {

@@ -307,7 +307,7 @@
 .mobile-menu-toggle.is-open span:last-child { transform: translateY(-5px) rotate(-45deg); }
 .auth-controls { display: flex; align-items: center; }
 .auth-controls { position: relative; }
-.profile-menu { position: absolute; top: calc(100% + .6rem); right: 0; z-index: 20; width: 11rem; border: 1px solid rgba(255,255,255,.14); padding: .6rem; background: #0b0b0b; box-shadow: 0 14px 35px rgba(0,0,0,.55); }
+.profile-menu { position: fixed; z-index: 9999; min-width: 13rem; max-width: min(90vw, 18rem); border: 1px solid rgba(255,255,255,.14); padding: .6rem; background: #0b0b0b; box-shadow: 0 14px 35px rgba(0,0,0,.55); }
 .profile-menu[hidden] { display: none; }
 .profile-menu-label { overflow: hidden; padding: .45rem .5rem; color: #aaa; font-size: .75rem; text-overflow: ellipsis; white-space: nowrap; }
 .profile-signout { width: 100%; border: 1px solid #333; padding: .5rem; color: #fff; background: #191919; font-size: .75rem; cursor: pointer; }
@@ -400,6 +400,14 @@ body.auth-gated .auth-close { display: none; }
 .auth-toggle:hover { color: #fff; }
 .auth-guest { display: block; margin: .75rem auto 0; border: 0; color: #666; background: transparent; font-size: .75rem; cursor: pointer; }
 .auth-guest:hover { color: #fff; }
+.profile-signout-confirm[hidden] { display: none; }
+.profile-signout-confirm > p { margin: .5rem 0; color: #ddd; font-size: .75rem; line-height: 1.45; }
+.profile-signout-confirm .signout-error { color: #fca5a5; }
+.profile-signout-actions { display: grid; gap: .4rem; margin-top: .65rem; }
+.profile-signout-actions button { width: 100%; border: 1px solid #333; padding: .5rem; color: #fff; background: #191919; font-size: .75rem; cursor: pointer; }
+.profile-signout-actions button:last-child { border-color: #fff; color: #000; background: #fff; font-weight: 600; }
+.profile-signout-actions button:hover { border-color: #888; }
+.profile-signout-actions button:disabled { cursor: wait; opacity: .65; }
 @media (max-width: 800px) {
   .auth-controls { margin-left: auto; }
   .auth-user-button { max-width: 8rem; }
