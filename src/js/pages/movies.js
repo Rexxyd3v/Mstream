@@ -55,16 +55,12 @@ function renderMovies(movies, grid) {
                 </a>
                 <div class="movie-card-actions">
                     <h3 class="line-clamp-2 text-sm font-semibold text-white">${movie.title}</h3>
-                    <div class="movie-card-buttons">
-                        <button type="button" class="movie-watch-button">Watch</button>
-                    </div>
                     <p class="mt-1.5 text-xs text-neutral-400">${movie.release_date || "Unknown"}</p>
                 </div>
             </div>
         `;
-        article.querySelector(".movie-watch-button").addEventListener("click", () => {
+        article.querySelector("a").addEventListener("click", () => {
             recordMovieInterest(movie);
-            window.openPlayer(movie.id, "movie", movie.title);
         });
         grid.appendChild(article);
     });

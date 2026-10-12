@@ -1,4 +1,3 @@
-import { openPlayer } from "../player.js";
 import { getMoviePreferences, recordMovieInterest } from "../recommendations.js";
 
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
@@ -123,30 +122,20 @@ function displayMovies(movies, targetGrid = document.getElementById("movieGrid")
         card.className = "cursor-pointer overflow-hidden";
         card.style.animation = `cardFadeIn 0.6s ease-out backwards ${(index * 0.05)}s`;
         card.innerHTML = `
-            <img src="${IMAGE_BASE_URL}${movie.poster_path}" alt="${movie.title}" class="h-64 w-full object-cover">
-            <div class="p-4">
-                <div class="flex items-start justify-between gap-3">
+            <a href="./details.html?id=${movie.id}&type=movie" class="block">
+                <img src="${IMAGE_BASE_URL}${movie.poster_path}" alt="${movie.title}" class="h-64 w-full object-cover">
+                <div class="p-4">
                     <h3 class="text-sm font-semibold text-white">${movie.title}</h3>
-                    <button type="button" class="home-watch-button shrink-0" aria-label="Watch ${movie.title}">
-                        Watch
-                    </button>
+                    <div class="mt-2 flex items-center justify-between text-xs text-neutral-500">
+                        <span>${movie.release_date || "Unknown"}</span>
+                        <span>${movie.vote_average?.toFixed(1) || "N/A"}</span>
+                    </div>
                 </div>
-                <div class="mt-2 flex items-center justify-between text-xs text-neutral-500">
-                    <span>${movie.release_date || "Unknown"}</span>
-                    <span>${movie.vote_average?.toFixed(1) || "N/A"}</span>
-                </div>
-            </div>
+            </a>
         `;
 
-        const watchMovie = () => {
+        card.querySelector("a")?.addEventListener("click", () => {
             recordMovieInterest(movie);
-            openPlayer(movie.id, "movie", movie.title);
-        };
-
-        card.addEventListener("click", watchMovie);
-        card.querySelector(".home-watch-button")?.addEventListener("click", (event) => {
-            event.stopPropagation();
-            watchMovie();
         });
         grid.appendChild(card);
     });
