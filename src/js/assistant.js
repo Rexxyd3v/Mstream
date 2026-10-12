@@ -1,18 +1,24 @@
 const STORAGE_KEY = "mstream-assistant-chat";
-const assistantHistory = loadHistory();
+const assistantHistory = [];
 
-function loadHistory() {
+// Remove any previously cached chats so nothing persists
+try {
+    localStorage.removeItem(STORAGE_KEY);
+    sessionStorage.removeItem(STORAGE_KEY);
+} catch {}
+
+export function clearAssistantChat() {
+    assistantHistory.length = 0;
     try {
-        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-        return Array.isArray(saved) ? saved.slice(-12) : [];
-    } catch (error) {
-        console.error("Could not restore movie assistant chat.", error);
-        return [];
-    }
+        localStorage.removeItem(STORAGE_KEY);
+        sessionStorage.removeItem(STORAGE_KEY);
+    } catch {}
+    renderHistory();
 }
 
-function saveHistory() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(assistantHistory.slice(-12)));
+if (typeof window !== "undefined") {
+    window.clearAssistantChat = clearAssistantChat;
+    window.addEventListener("mstream:signout", clearAssistantChat);
 }
 
 function createAssistant() {
@@ -128,7 +134,6 @@ async function askAssistant(event) {
 
     appendMessage(question, "user");
     assistantHistory.push({ role: "user", text: question });
-    saveHistory();
     input.value = "";
     input.disabled = true;
     form.querySelector("button").disabled = true;
@@ -149,7 +154,6 @@ async function askAssistant(event) {
         typing.innerHTML = "";
         renderMessageText(typing, data.answer);
         assistantHistory.push({ role: "assistant", text: data.answer });
-        saveHistory();
         status.textContent = "";
     } catch (error) {
         console.error("Could not ask movie assistant.", error);

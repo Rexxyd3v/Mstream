@@ -211,6 +211,14 @@ function renderSignedOut() {
     button.onclick = openModal;
     const menu = document.getElementById("profileMenu");
     if (menu) closeMenu(menu);
+
+    try {
+        localStorage.removeItem("mstream-assistant-chat");
+        sessionStorage.removeItem("mstream-assistant-chat");
+    } catch {}
+    if (typeof window.clearAssistantChat === "function") {
+        window.clearAssistantChat();
+    }
 }
 
 function initializeAuth() {
@@ -258,6 +266,14 @@ function initializeAuth() {
         try {
             isSigningOut = true;
             sessionStorage.removeItem(GUEST_MODE_KEY);
+            try {
+                localStorage.removeItem("mstream-assistant-chat");
+                sessionStorage.removeItem("mstream-assistant-chat");
+            } catch {}
+            if (typeof window.clearAssistantChat === "function") {
+                window.clearAssistantChat();
+            }
+            window.dispatchEvent(new CustomEvent("mstream:signout"));
             await signOut(auth);
             window.location.href = window.location.origin + "/pages/home.html";
         } catch (error) {
