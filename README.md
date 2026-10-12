@@ -117,6 +117,35 @@ npm run build
 
 The generated files are placed in `dist/`.
 
+## Movie Assistant
+
+The Home page includes a Gemini-powered movie assistant through the
+`api/movie-assistant.js` Vercel serverless function. The Gemini key is never
+bundled into the browser application.
+
+Deploy the project to Vercel, then add `GEMINI_API_KEY` in:
+
+```text
+Vercel dashboard -> Project -> Settings -> Environment Variables
+```
+
+Enable it for Production, Preview, and Development as needed. Redeploy after
+adding or changing the variable. The local `.env` file is for local
+development only and must not be committed.
+
+For a CLI deployment:
+
+```powershell
+npm install -g vercel
+vercel login
+vercel
+vercel env add GEMINI_API_KEY
+vercel --prod
+```
+
+Also add the existing `VITE_*` variables from `.env` to Vercel so TMDB and
+Firebase features continue working in the deployed frontend.
+
 ## Adding A Page
 
 Create the HTML file in `pages/`:

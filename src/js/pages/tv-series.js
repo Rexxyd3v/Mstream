@@ -1,3 +1,5 @@
+import { recordMovieInterest } from "../recommendations.js";
+
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
 const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500";
 const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
@@ -56,7 +58,7 @@ function renderSeries(series, grid) {
                 </div>
             </a>
         `;
+        article.addEventListener("click", () => recordMovieInterest(show));
         grid.appendChild(article);
     });
 }
-

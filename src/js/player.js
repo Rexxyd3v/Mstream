@@ -55,7 +55,6 @@ let current = {
 };
 let loadingTimer;
 let autoHideTimer;
-let pendingPlaybackAction = null;
 
 function isFullscreen() {
     return Boolean(document.fullscreenElement || document.webkitFullscreenElement);
@@ -135,11 +134,6 @@ function buildOverlay() {
             <div class="cv-player-actions">
                 <button class="cv-topbar-btn" id="cv-topbar-skip" type="button">Skip Intro</button>
                 <button class="cv-topbar-btn hidden" id="cv-topbar-next-ep" type="button">Next Ep</button>
-                <span class="cv-room-controls hidden" id="cv-room-controls">
-                    <button class="cv-topbar-btn" id="cv-room-play" type="button">Play</button>
-                    <button class="cv-topbar-btn" id="cv-room-pause" type="button">Pause</button>
-                    <button class="cv-topbar-btn" id="cv-room-stop" type="button">Stop</button>
-                </span>
                 <button class="cv-topbar-btn" id="cv-topbar-fullscreen" type="button"><span class="cv-fullscreen-icon">[+]</span> <span class="cv-btn-text">Fullscreen</span></button>
                 <button class="cv-player-close" id="cv-player-close" type="button" aria-label="Close player">&times;</button>
             </div>
@@ -150,20 +144,11 @@ function buildOverlay() {
                 <div class="cv-player-toast" id="cv-player-toast"></div>
                 <button class="cv-skip-intro-btn hidden" id="cv-skip-intro" type="button">Skip Intro <span>S</span></button>
                 <iframe id="cv-player-iframe" allowfullscreen allow="autoplay *; fullscreen *; picture-in-picture *; encrypted-media *" referrerpolicy="no-referrer-when-downgrade"></iframe>
-                <div class="cv-player-guest-lock hidden" id="cv-player-guest-lock" role="status"><span>The host controls playback</span></div>
             </div>
             <div class="cv-episode-panel hidden" id="cv-episode-panel">
                 <div class="cv-ep-panel-header"><h3>Episodes</h3><select class="cv-season-select" id="cv-season-select"></select></div>
                 <div class="cv-episode-list" id="cv-episode-list"></div>
             </div>
-            <aside class="cv-chat-panel hidden" id="cv-chat-panel" aria-label="Watch Together chat">
-                <div class="cv-chat-header">Room chat</div>
-                <div class="cv-chat-messages" id="cv-chat-messages"></div>
-                <form class="cv-chat-form" id="cv-chat-form">
-                    <input id="cv-chat-input" maxlength="300" placeholder="Message..." autocomplete="off">
-                    <button type="submit">Send</button>
-                </form>
-            </aside>
         </div>
         <div class="cv-player-notice">Streams are sourced from third-party providers. If a source does not load, try another server. <a href="https://www.themoviedb.org" target="_blank" rel="noopener">Metadata by TMDB</a></div>
     `;
@@ -175,33 +160,12 @@ function buildOverlay() {
     seasonSelect = overlay.querySelector("#cv-season-select");
 
     overlay.querySelector("#cv-player-close").addEventListener("click", closePlayer);
-    ["play", "pause", "stop"].forEach(action => {
-        overlay.querySelector(`#cv-room-${action}`).addEventListener("click", () => {
-            applyPlaybackCommand(action);
-            window.dispatchEvent(new CustomEvent("watch-room-command", {
-                detail: { roomId: current.roomId, action },
-            }));
-        });
-    });
-    overlay.querySelector("#cv-chat-form").addEventListener("submit", event => {
-        event.preventDefault();
-        const input = overlay.querySelector("#cv-chat-input");
-        if (input?.value.trim()) {
-            window.dispatchEvent(new CustomEvent("watch-room-chat-send", {
-                detail: { text: input.value.trim(), roomId: current.roomId },
-            }));
-            input.value = "";
-        }
-    });
     overlay.querySelector("#cv-server-tabs").addEventListener("click", event => {
         const button = event.target.closest("[data-server]");
         if (!button) return;
         current.server = SERVERS.find(server => server.key === button.dataset.server) || SERVERS[0];
         overlay.querySelectorAll(".cv-server-btn").forEach(item => item.classList.toggle("active", item === button));
         loadIframe();
-        window.dispatchEvent(new CustomEvent("player-server-change", {
-            detail: { roomId: current.roomId, serverKey: current.server.key },
-        }));
     });
     overlay.querySelector("#cv-topbar-fullscreen").addEventListener("click", toggleFullscreen);
     overlay.querySelector("#cv-topbar-skip").addEventListener("click", skipIntro);
@@ -220,29 +184,6 @@ function buildOverlay() {
     ["fullscreenchange", "webkitfullscreenchange"].forEach(eventName => document.addEventListener(eventName, updateFullscreenUI));
 }
 
-function applyPlaybackCommand(action) {
-    if (!current.roomId || !["play", "pause", "stop"].includes(action)) return;
-    pendingPlaybackAction = action;
-    const messages = {
-        play: [{ event: "command", func: "playVideo" }, { type: "play" }, "play"],
-        pause: [{ event: "command", func: "pauseVideo" }, { type: "pause" }, "pause"],
-        stop: [{ event: "command", func: "stopVideo" }, { type: "stop" }, "stop"],
-    }[action] || [];
-    if (!iframe?.contentWindow) return;
-    messages.forEach(message => {
-        try {
-            iframe?.contentWindow?.postMessage(message, "*");
-            iframe?.contentWindow?.postMessage(JSON.stringify(message), "*");
-        } catch (error) {
-            console.warn("The stream provider rejected the playback command.", error);
-        }
-    });
-}
-
-window.addEventListener("player-playback-command", (event) => {
-    applyPlaybackCommand(event.detail?.action);
-});
-
 function showTopbar() {
     const topbar = document.getElementById("cv-player-topbar");
     topbar?.classList.remove("hidden");
@@ -256,7 +197,7 @@ function loadIframe() {
     window.clearTimeout(loadingTimer);
     iframe.src = "about:blank";
 
-    const source = current.type === "movie"
+    let source = current.type === "movie"
         ? current.server.movie(current.id)
         : current.server.tv(current.id, current.season, current.episode);
     const episodeTag = document.getElementById("cv-player-ep-tag");
@@ -274,9 +215,6 @@ function loadIframe() {
         if (!overlay?.classList.contains("open")) return;
         iframe.onload = () => {
             loadingEl.classList.add("hidden");
-            if (pendingPlaybackAction) {
-                window.setTimeout(() => applyPlaybackCommand(pendingPlaybackAction), 250);
-            }
         };
         iframe.src = source;
         loadingTimer = window.setTimeout(() => {
@@ -329,26 +267,15 @@ function playNextEpisode() {
 
 export function openPlayer(id, mediaType, title, seasons = [], options = {}) {
     buildOverlay();
-    const roomServer = SERVERS.find(server => server.key === options.serverKey) || SERVERS[0];
-    current = { id, type: mediaType, title, season: 1, episode: 1, server: roomServer, roomId: options.roomId || null, isHost: options.isHost === true };
+    const playerServer = SERVERS.find(server => server.key === options.serverKey) || SERVERS[0];
+    current = { id, type: mediaType, title, season: 1, episode: 1, server: playerServer };
     overlay.querySelector("#cv-player-title").textContent = title || "Now Playing";
-    overlay.querySelectorAll(".cv-server-btn").forEach(button => button.classList.toggle("active", button.dataset.server === roomServer.key));
+    overlay.querySelectorAll(".cv-server-btn").forEach(button => button.classList.toggle("active", button.dataset.server === playerServer.key));
     overlay.querySelector("#cv-episode-panel").classList.toggle("hidden", mediaType !== "tv");
-    overlay.querySelector("#cv-chat-panel").classList.toggle("hidden", !current.roomId);
-    overlay.querySelector("#cv-room-controls").classList.toggle("hidden", !current.roomId || !current.isHost);
-    const guestMode = Boolean(current.roomId && !current.isHost);
-    overlay.classList.toggle("cv-player-guest-mode", guestMode);
-    overlay.querySelector("#cv-player-guest-lock").classList.toggle("hidden", !guestMode);
-    iframe.inert = guestMode;
-    iframe.tabIndex = guestMode ? -1 : 0;
     overlay.classList.add("open");
     document.body.style.overflow = "hidden";
     showTopbar();
     loadIframe();
-    window.dispatchEvent(new CustomEvent("watch-room-player-open", {
-        detail: { roomId: current.roomId },
-    }));
-
     if (mediaType === "tv") {
         if (seasons.length) {
             populateSeasons(seasons);

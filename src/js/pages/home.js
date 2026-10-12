@@ -1,4 +1,5 @@
 import { openPlayer } from "../player.js";
+import { getMoviePreferences, recordMovieInterest } from "../recommendations.js";
 
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
 const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500";
@@ -39,6 +40,7 @@ async function loadPopularMovies() {
 
         const data = await response.json();
         displayMovies(data.results);
+        loadRecommendations();
     } catch (error) {
         console.error(error);
 
@@ -46,6 +48,26 @@ async function loadPopularMovies() {
         if (grid) {
             grid.innerHTML = "<p>Unable to load movies.</p>";
         }
+
+    }
+}
+
+async function loadRecommendations() {
+    const preferences = getMoviePreferences();
+    const section = document.getElementById("recommendationsSection");
+    if (!section || !preferences.genres.length) return;
+
+    const url = `${TMDB_BASE_URL}/discover/movie?api_key=${TMDB_API_KEY}&language=en-US&sort_by=popularity.desc&with_genres=${preferences.genres.join("|")}`;
+    try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("Recommendation request failed");
+        const data = await response.json();
+        const recommendations = data.results.filter(movie => !preferences.watchedIds.includes(String(movie.id))).slice(0, 8);
+        if (!recommendations.length) return;
+        section.hidden = false;
+        displayMovies(recommendations, document.getElementById("recommendationGrid"));
+    } catch (error) {
+        console.error("Could not load recommendations.", error);
     }
 }
 
@@ -83,8 +105,8 @@ async function searchMovies() {
     }
 }
 
-function displayMovies(movies) {
-    const grid = document.getElementById("movieGrid");
+function displayMovies(movies, targetGrid = document.getElementById("movieGrid")) {
+    const grid = targetGrid;
 
     if (!grid) {
         return;
@@ -117,6 +139,7 @@ function displayMovies(movies) {
         `;
 
         const watchMovie = () => {
+            recordMovieInterest(movie);
             openPlayer(movie.id, "movie", movie.title);
         };
 

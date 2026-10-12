@@ -1,6 +1,7 @@
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
 const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500";
 const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
+import { recordMovieInterest } from "../recommendations.js";
 
 if (!TMDB_API_KEY) {
     throw new Error("Missing VITE_TMDB_API_KEY in .env");
@@ -56,17 +57,14 @@ function renderMovies(movies, grid) {
                     <h3 class="line-clamp-2 text-sm font-semibold text-white">${movie.title}</h3>
                     <div class="movie-card-buttons">
                         <button type="button" class="movie-watch-button">Watch</button>
-                        <button type="button" class="movie-room-button">Watch Together</button>
                     </div>
                     <p class="mt-1.5 text-xs text-neutral-400">${movie.release_date || "Unknown"}</p>
                 </div>
             </div>
         `;
         article.querySelector(".movie-watch-button").addEventListener("click", () => {
+            recordMovieInterest(movie);
             window.openPlayer(movie.id, "movie", movie.title);
-        });
-        article.querySelector(".movie-room-button").addEventListener("click", () => {
-            window.dispatchEvent(new CustomEvent("watch-room-create", { detail: movie }));
         });
         grid.appendChild(article);
     });

@@ -35,7 +35,7 @@
         <section class="home-hero">
             <div class="hero-copy">
                 <p class="eyebrow"><span class="eyebrow-dot"></span> YOUR NEXT MOVIE NIGHT STARTS HERE</p>
-                <h1>Stories worth<br><span>staying in for.</span></h1>
+                <h1>Watch something<br><span>you’ll love.</span></h1>
                 <p class="hero-description">A little escape is always close. Find your next favorite film or series, all in one place.</p>
                 <div class="hero-actions">
                     <a href="./movies.html" class="hero-primary">Explore movies <span aria-hidden="true">↗</span></a>
@@ -43,6 +43,13 @@
                 </div>
                 <div class="hero-note"><span class="hero-note-line"></span> HANDPICKED FOR YOUR NEXT WATCH</div>
             </div>
+        </section>
+
+        <section id="recommendationsSection" class="catalog-section" hidden>
+            <div class="mb-6 flex items-center justify-between">
+                <div><p class="eyebrow section-eyebrow">MADE FOR YOU</p><h2 class="text-lg font-semibold text-white">Recommended for you</h2></div>
+            </div>
+            <div id="recommendationGrid" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"></div>
         </section>
 
         <!-- Grid section -->
@@ -56,6 +63,8 @@
 
     </main>
 
+    <script type="module" src="../src/js/page-transitions.js"></script>
+    <script type="module" src="../src/js/assistant.js"></script>
     <script type="module" src="../src/js/pages/home.js"></script>
     <script type="module" src="../src/js/effects.js"></script>
     <script type="module" src="../src/js/auth.js"></script>
