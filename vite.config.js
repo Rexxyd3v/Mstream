@@ -1,22 +1,35 @@
 const { defineConfig } = require("vite");
-const { globSync } = require("node:fs");
 const { resolve } = require("node:path");
 const { loadEnv } = require("vite");
 const movieAssistant = require("./api/movie-assistant");
 
-const htmlEntries = Object.fromEntries(
-    globSync("**/*.html", {
-        cwd: __dirname,
-        exclude: ["node_modules/**", "dist/**"],
-    }).map(file => [file.replace(/\.html$/, ""), resolve(__dirname, file)])
-);
+const htmlEntries = {
+    index: resolve(__dirname, "index.html"),
+    home: resolve(__dirname, "pages/home.html"),
+    movies: resolve(__dirname, "pages/movies.html"),
+    "tv-series": resolve(__dirname, "pages/tv-series.html"),
+    favorites: resolve(__dirname, "pages/favorites.html"),
+    details: resolve(__dirname, "pages/details.html"),
+};
 
 module.exports = defineConfig(({ mode }) => {
     const env = loadEnv(mode, __dirname, "");
 
     return {
-        plugins: [{
-            name: "local-movie-assistant-api",
+        plugins: [
+            {
+                name: "compile-tailwind",
+                buildStart() {
+                    const { execSync } = require("node:child_process");
+                    try {
+                        execSync("npx @tailwindcss/cli -i ./src/styles/input.css -o ./dist/output.css", { stdio: "inherit" });
+                    } catch (e) {
+                        console.error("Failed to compile Tailwind CSS:", e);
+                    }
+                },
+            },
+            {
+                name: "local-movie-assistant-api",
             configureServer(server) {
                 server.middlewares.use("/api/movie-assistant", async (request, response, next) => {
                     if (request.method !== "POST") {

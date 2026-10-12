@@ -13,6 +13,9 @@
   "author": "",
   "license": "ISC",
   "type": "commonjs",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "dependencies": {
     "@tailwindcss/cli": "^4.3.3",
     "autoprefixer": "^10.6.1",
