@@ -1,6 +1,14 @@
+import { initializeSearch } from "./search.js";
+
 const pointerFine = window.matchMedia("(hover: hover) and (pointer: fine)");
 
 document.addEventListener("DOMContentLoaded", () => {
+    const header = document.querySelector("header > div");
+    header?.classList.add("site-nav");
+    const navigation = header?.querySelector("nav");
+    navigation?.classList.add("nav-links");
+    header?.querySelector("a")?.classList.add("brand");
+    initializeSearch(header);
     document.querySelectorAll("header nav").forEach((nav, index) => {
         nav.classList.add("responsive-nav");
         const headerContent = nav.parentElement;

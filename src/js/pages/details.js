@@ -2,6 +2,7 @@ import { openPlayer } from "../player.js";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../firebase.js";
 import { isUserFavorite, removeUserFavorite, saveUserFavorite } from "../favorites-store.js";
+import { getLastSelection } from "../watch-history.js";
 
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
 const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500";
@@ -12,7 +13,7 @@ if (!TMDB_API_KEY) {
 }
 
 const urlParams = new URLSearchParams(window.location.search);
-const mediaType = urlParams.get("type") || "movie";
+const mediaType = urlParams.get("type") === "tv" ? "tv" : "movie";
 const mediaId = urlParams.get("id");
 
 async function renderFavoriteButton(media, user) {
@@ -52,7 +53,8 @@ async function renderFavoriteButton(media, user) {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-    if (!mediaId) {
+    if (!mediaId || !/^[1-9]\d*$/.test(mediaId)) {
+        document.getElementById("detailOverview").textContent = "This movie link is incomplete. Choose a movie from the catalog.";
         return;
     }
 
@@ -100,11 +102,32 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         if (watchButton) {
+            if (auth) await auth.authStateReady();
+            const originalLabel = watchButton.textContent;
+            const startOver = document.createElement("button");
+            startOver.type = "button";
+            startOver.className = "history-start-over";
+            startOver.textContent = "Start over";
+            startOver.hidden = true;
+            watchButton.after(startOver);
+            function updateContinue() {
+                const saved = getLastSelection(media.id, mediaType);
+                watchButton.textContent = saved ? (mediaType === "tv" ? `Continue · S${saved.season} E${saved.episode}` : "Continue watching") : originalLabel;
+                startOver.hidden = !saved;
+            }
+            updateContinue();
+            window.addEventListener("mstream:history-changed", updateContinue);
+            window.addEventListener("storage", updateContinue);
+            if (auth) onAuthStateChanged(auth, updateContinue);
             watchButton.onclick = () => {
-                openPlayer(media.id, mediaType, item.title, media.seasons);
+                openPlayer(media.id, mediaType, item.title, media.seasons, {
+                    ...getLastSelection(media.id, mediaType), posterPath: media.poster_path,
+                });
             };
+            startOver.addEventListener("click", () => openPlayer(media.id, mediaType, item.title, media.seasons, { posterPath: media.poster_path }));
         }
     } catch (error) {
         console.error(error);
+        document.getElementById("detailOverview").textContent = "Could not load this title. Check your connection and try again.";
     }
 });

@@ -1,3 +1,4 @@
+import { renderSpotlight } from "../movie-slides.js";
 import { recordMovieInterest } from "../recommendations.js";
 
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
@@ -23,6 +24,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         const data = await response.json();
+        const spotlight = document.getElementById("movieSpotlight");
+        renderSpotlight(data.results || [], spotlight, "tv");
+        spotlight.hidden = !spotlight.children.length;
         renderSeries(data.results, grid);
     } catch (error) {
         console.error(error);
@@ -51,11 +55,11 @@ function renderSeries(series, grid) {
                 <div class="relative overflow-hidden">
                     <img src="${IMAGE_BASE_URL}${show.poster_path}" alt="${show.name}" class="h-72 w-full object-cover transition duration-300 group-hover:scale-105">
                     <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <div class="absolute bottom-0 left-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                </div>
+                    <div class="catalog-card-copy">
                         <h3 class="line-clamp-2 text-sm font-semibold text-white">${show.name}</h3>
                         <p class="mt-1.5 text-xs text-neutral-400">${show.first_air_date || "Unknown"}</p>
                     </div>
-                </div>
             </a>
         `;
         article.addEventListener("click", () => recordMovieInterest(show));

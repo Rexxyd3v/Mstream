@@ -1,3 +1,4 @@
+import { renderSpotlight } from "../movie-slides.js";
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
 const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500";
 const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
@@ -22,6 +23,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         const data = await response.json();
+        const spotlight = document.getElementById("movieSpotlight");
+        renderSpotlight(data.results || [], spotlight, "movie");
+        spotlight.hidden = !spotlight.children.length;
         renderMovies(data.results, grid);
     } catch (error) {
         console.error(error);

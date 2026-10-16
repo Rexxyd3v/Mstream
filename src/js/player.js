@@ -1,3 +1,5 @@
+import { recordWatchSelection } from "./watch-history.js";
+
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
 const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
 
@@ -178,6 +180,7 @@ function buildOverlay() {
         loadEpisodes();
     });
     overlay.addEventListener("mousemove", showTopbar);
+    overlay.addEventListener("focusin", showTopbar);
     overlay.addEventListener("click", event => {
         if (event.target === overlay) closePlayer();
     });
@@ -193,6 +196,9 @@ function showTopbar() {
 
 function loadIframe() {
     if (!iframe || !loadingEl) return;
+    recordWatchSelection({ ...current, serverKey: current.server.key }).then(saved => {
+        if (!saved) showToast("History could not be saved. Allow browser storage to keep your selection.");
+    }).catch(() => showToast("History could not be saved."));
     loadingEl.classList.remove("hidden");
     window.clearTimeout(loadingTimer);
     iframe.src = "about:blank";
@@ -225,11 +231,14 @@ function loadIframe() {
 }
 
 async function loadEpisodes() {
+    const requestedId = current.id;
+    const requestedSeason = current.season;
     episodeList.innerHTML = '<div class="cv-ep-loading">Loading episodes...</div>';
     try {
         const response = await fetch(`${TMDB_BASE_URL}/tv/${current.id}/season/${current.season}?api_key=${TMDB_API_KEY}&language=en-US`);
         if (!response.ok) throw new Error("Episode request failed");
         const data = await response.json();
+        if (current.id !== requestedId || current.season !== requestedSeason) return;
         const episodes = data.episodes || [];
         episodeList.innerHTML = episodes.length
             ? episodes.map(episode => `<button class="cv-ep-item${episode.episode_number === current.episode ? " playing" : ""}" type="button" data-episode="${episode.episode_number}"><span class="cv-ep-num">E${episode.episode_number}</span><span class="cv-ep-info"><strong>${escapeHtml(episode.name || `Episode ${episode.episode_number}`)}</strong><small>${escapeHtml(episode.overview || "No synopsis available.")}</small></span></button>`).join("")
@@ -268,7 +277,10 @@ function playNextEpisode() {
 export function openPlayer(id, mediaType, title, seasons = [], options = {}) {
     buildOverlay();
     const playerServer = SERVERS.find(server => server.key === options.serverKey) || SERVERS[0];
-    current = { id, type: mediaType, title, season: 1, episode: 1, server: playerServer };
+    current = { id, type: mediaType, title, posterPath: options.posterPath || null,
+        season: Number.isInteger(options.season) && options.season > 0 ? options.season : 1,
+        episode: Number.isInteger(options.episode) && options.episode > 0 ? options.episode : 1,
+        server: playerServer };
     overlay.querySelector("#cv-player-title").textContent = title || "Now Playing";
     overlay.querySelectorAll(".cv-server-btn").forEach(button => button.classList.toggle("active", button.dataset.server === playerServer.key));
     overlay.querySelector("#cv-episode-panel").classList.toggle("hidden", mediaType !== "tv");
@@ -300,7 +312,8 @@ export function closePlayer() {
 }
 
 document.addEventListener("keydown", event => {
-    if (!overlay?.classList.contains("open") || ["INPUT", "SELECT"].includes(event.target.tagName)) return;
+    if (!overlay?.classList.contains("open") || event.target.isContentEditable
+        || ["INPUT", "SELECT", "TEXTAREA", "BUTTON"].includes(event.target.tagName)) return;
     if (event.key === "Escape") return isFullscreen() ? toggleFullscreen() : closePlayer();
     if (event.key.toLowerCase() === "f") return toggleFullscreen();
     if (event.key.toLowerCase() === "s") return skipIntro();

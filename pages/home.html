@@ -18,21 +18,23 @@
                 <a href="./tv-series.html">TV Series</a>
                 <a href="./favorites.html">Favorites</a>
             </nav>
-            <div class="nav-search">
+            <form class="nav-search" role="search" action="./home.html">
                 <input
-                    type="text"
+                    type="search"
                     id="searchInput"
-                    placeholder="Search..."
+                    name="q"
+                    aria-label="Search movies and TV series"
+                    placeholder="Search titles…"
                 >
-                <button id="searchButton" type="button">Search</button>
-            </div>
+                <button id="searchButton" type="submit">Search</button>
+            </form>
         </div>
     </header>
 
     <main class="mx-auto max-w-7xl px-6">
 
         <!-- Hero -->
-        <section class="home-hero">
+        <section class="home-hero" id="movieSpotlight">
             <div class="hero-copy">
                 <p class="eyebrow"><span class="eyebrow-dot"></span> YOUR NEXT MOVIE NIGHT STARTS HERE</p>
                 <h1>Watch something<br><span>you’ll love.</span></h1>
@@ -45,20 +47,39 @@
             </div>
         </section>
 
+        <section class="catalog-section history-section" aria-labelledby="historyTitle">
+            <div class="history-heading">
+                <div><p class="eyebrow section-eyebrow">PICK UP YOUR LAST SELECTION</p><h2 id="historyTitle">Continue watching</h2></div>
+                <button id="clearHistory" type="button" hidden>Clear history</button>
+            </div>
+            <p class="history-note">Your last 50 opened titles, saved in this browser. Continue restores your episode and server; playback starts where the provider allows.</p>
+            <p id="historyEmpty" class="history-empty" hidden>Nothing here yet. Open a movie or episode to start your watch history.</p>
+            <p id="historyStatus" class="history-note" role="status"></p>
+            <div id="historyGrid" class="history-grid"></div>
+        </section>
+
         <section id="recommendationsSection" class="catalog-section" hidden>
             <div class="mb-6 flex items-center justify-between">
                 <div><p class="eyebrow section-eyebrow">MADE FOR YOU</p><h2 class="text-lg font-semibold text-white">Recommended for you</h2></div>
             </div>
-            <div id="recommendationGrid" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"></div>
+            <div id="recommendationGrid" class="movie-rail"></div>
         </section>
 
         <!-- Grid section -->
         <section class="catalog-section">
+            <div class="browse-filters" role="group" aria-label="Filter titles">
+                <div class="filter-heading"><span class="eyebrow">CURATE YOUR NIGHT</span><strong>Find your kind of story.</strong></div>
+                <label for="categoryFilter">Category<select id="categoryFilter"><option value="all">Movies &amp; series</option><option value="movie">Movies</option><option value="tv">TV series</option></select></label>
+                <label for="genreFilter">Genre<select id="genreFilter"><option value="">All genres</option></select></label>
+                <button id="resetFilters" type="button">Reset</button>
+            </div>
             <div class="mb-6 flex items-center justify-between">
                 <div><p class="eyebrow section-eyebrow">THE GOOD STUFF</p><h2 id="sectionTitle" class="text-lg font-semibold text-white">Popular Movies</h2></div>
                 <a href="./movies.html" class="section-link">View all <span aria-hidden="true">↗</span></a>
             </div>
-            <div id="movieGrid" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"></div>
+            <p id="searchStatus" class="search-status" role="status" aria-live="polite"></p>
+            <div id="movieGrid" class="movie-rail"></div>
+            <button id="loadMoreResults" class="load-more-results" type="button" hidden>Load more titles <span aria-hidden="true">↓</span></button>
         </section>
 
     </main>

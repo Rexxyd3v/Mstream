@@ -190,6 +190,20 @@ Tailwind is installed, but the current pages intentionally use plain HTML withou
 npm run build
 ```
 
+## Watch history and Continue Watching
+
+Opening a player saves the title, server, and selected season/episode. The home
+page shows the most recent 50 opened titles with Continue, Remove, and Clear
+history controls. On the details page, Continue restores the saved selection;
+Start over opens the first episode on the default server.
+
+History is stored only in this browser, separately for each signed-in account
+and for guests. It does not sync across devices. Clearing browser data removes
+it. These entries record player opens, not confirmed playback or completion.
+External iframe providers determine playback position; the app does not promise
+to resume at the exact timestamp. If browser storage is blocked, playback still
+works and the player displays a history-saving notice.
+
 ## TMDB API
 
 The application uses these TMDB API endpoints:
