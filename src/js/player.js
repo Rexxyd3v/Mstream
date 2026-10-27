@@ -6,37 +6,31 @@ const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
 const SERVERS = [
     {
         key: "vidsrcme",
-        label: "Server 1",
         movie: id => `https://vidsrc.me/embed/movie?tmdb=${id}`,
         tv: (id, season, episode) => `https://vidsrc.me/embed/tv?tmdb=${id}&season=${season}&episode=${episode}`,
     },
     {
         key: "vidsrcxyz",
-        label: "Server 2",
         movie: id => `https://vidsrc.xyz/embed/movie/${id}`,
         tv: (id, season, episode) => `https://vidsrc.xyz/embed/tv/${id}?s=${season}&e=${episode}`,
     },
     {
         key: "vidsrccc",
-        label: "Server 3",
         movie: id => `https://vidsrc.cc/v2/embed/movie/${id}`,
         tv: (id, season, episode) => `https://vidsrc.cc/v2/embed/tv/${id}/${season}/${episode}`,
     },
     {
         key: "moviesapi",
-        label: "Server 4",
         movie: id => `https://moviesapi.club/movie/${id}`,
         tv: (id, season, episode) => `https://moviesapi.club/tv/${id}-${season}-${episode}`,
     },
     {
         key: "smashy",
-        label: "Server 5",
         movie: id => `https://player.smashy.stream/movie/${id}`,
         tv: (id, season, episode) => `https://player.smashy.stream/tv/${id}?s=${season}&e=${episode}`,
     },
     {
         key: "111movies",
-        label: "Server 6",
         movie: id => `https://111movies.com/movie/${id}`,
         tv: (id, season, episode) => `https://111movies.com/tv/${id}/${season}/${episode}`,
     },
@@ -57,6 +51,9 @@ let current = {
 };
 let loadingTimer;
 let autoHideTimer;
+let loadCycle = 0;
+let attemptedSources = new Set();
+let previousFocus;
 
 function isFullscreen() {
     return Boolean(document.fullscreenElement || document.webkitFullscreenElement);
@@ -74,23 +71,12 @@ function toggleFullscreen() {
     request?.call(overlay).catch(() => {});
 }
 
-function updateFullscreenUI() {
-    const button = document.getElementById("cv-topbar-fullscreen");
-    if (!button) return;
-    button.querySelector(".cv-fullscreen-icon").textContent = isFullscreen() ? "[ ]" : "[+]";
-    button.querySelector(".cv-btn-text").textContent = isFullscreen() ? "Exit" : "Fullscreen";
-}
-
 function showToast(message) {
     const toast = document.getElementById("cv-player-toast");
     if (!toast) return;
     toast.textContent = message;
     toast.classList.add("show");
     window.setTimeout(() => toast.classList.remove("show"), 2500);
-}
-
-function showSkipButton() {
-    document.getElementById("cv-skip-intro")?.classList.remove("hidden");
 }
 
 function skipIntro() {
@@ -120,39 +106,27 @@ function buildOverlay() {
 
     overlay = document.createElement("div");
     overlay.id = "cv-player-overlay";
+    overlay.tabIndex = -1;
     overlay.setAttribute("role", "dialog");
     overlay.setAttribute("aria-modal", "true");
     overlay.setAttribute("aria-label", "Video player");
     overlay.innerHTML = `
-        <div class="cv-player-topbar" id="cv-player-topbar">
-            <div class="cv-player-meta">
-                <span class="cv-player-title" id="cv-player-title"></span>
-                <span class="cv-player-ep-tag hidden" id="cv-player-ep-tag"></span>
-            </div>
-            <div class="cv-server-tabs" id="cv-server-tabs">
-                <span class="cv-server-label">Source</span>
-                ${SERVERS.map(server => `<button class="cv-server-btn${server === SERVERS[0] ? " active" : ""}" data-server="${server.key}">${server.label}</button>`).join("")}
-            </div>
-            <div class="cv-player-actions">
-                <button class="cv-topbar-btn" id="cv-topbar-skip" type="button">Skip Intro</button>
-                <button class="cv-topbar-btn hidden" id="cv-topbar-next-ep" type="button">Next Ep</button>
-                <button class="cv-topbar-btn" id="cv-topbar-fullscreen" type="button"><span class="cv-fullscreen-icon">[+]</span> <span class="cv-btn-text">Fullscreen</span></button>
-                <button class="cv-player-close" id="cv-player-close" type="button" aria-label="Close player">&times;</button>
-            </div>
+        <div class="cv-player-controls" id="cv-player-topbar">
+            <button class="cv-player-close" id="cv-player-close" type="button" aria-label="Close player">&times;</button>
+            <button class="cv-episodes-toggle hidden" id="cv-topbar-episodes" type="button" aria-expanded="false" aria-controls="cv-episode-panel">Episodes</button>
         </div>
         <div class="cv-player-main">
             <div class="cv-player-iframe-wrap">
-                <div class="cv-player-loading" id="cv-loading"><div class="cv-spinner"></div><span>Loading stream...</span></div>
+                <div class="cv-player-loading" id="cv-loading"><div class="cv-spinner"></div><span id="cv-loading-status" role="status">Finding your stream…</span><button class="cv-retry-stream hidden" id="cv-retry-stream" type="button">Try again</button></div>
                 <div class="cv-player-toast" id="cv-player-toast"></div>
                 <button class="cv-skip-intro-btn hidden" id="cv-skip-intro" type="button">Skip Intro <span>S</span></button>
-                <iframe id="cv-player-iframe" allowfullscreen allow="autoplay *; fullscreen *; picture-in-picture *; encrypted-media *" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                <iframe title="Video player" id="cv-player-iframe" allowfullscreen allow="autoplay *; fullscreen *; picture-in-picture *; encrypted-media *" referrerpolicy="no-referrer-when-downgrade"></iframe>
             </div>
             <div class="cv-episode-panel hidden" id="cv-episode-panel">
                 <div class="cv-ep-panel-header"><h3>Episodes</h3><select class="cv-season-select" id="cv-season-select"></select></div>
                 <div class="cv-episode-list" id="cv-episode-list"></div>
             </div>
         </div>
-        <div class="cv-player-notice">Streams are sourced from third-party providers. If a source does not load, try another server. <a href="https://www.themoviedb.org" target="_blank" rel="noopener">Metadata by TMDB</a></div>
     `;
     document.body.appendChild(overlay);
 
@@ -162,72 +136,80 @@ function buildOverlay() {
     seasonSelect = overlay.querySelector("#cv-season-select");
 
     overlay.querySelector("#cv-player-close").addEventListener("click", closePlayer);
-    overlay.querySelector("#cv-server-tabs").addEventListener("click", event => {
-        const button = event.target.closest("[data-server]");
-        if (!button) return;
-        current.server = SERVERS.find(server => server.key === button.dataset.server) || SERVERS[0];
-        overlay.querySelectorAll(".cv-server-btn").forEach(item => item.classList.toggle("active", item === button));
-        loadIframe();
+    overlay.querySelector("#cv-retry-stream").addEventListener("click", () => loadIframe());
+    overlay.querySelector("#cv-topbar-episodes").addEventListener("click", event => {
+        const expanded = event.currentTarget.getAttribute("aria-expanded") !== "true";
+        event.currentTarget.setAttribute("aria-expanded", String(expanded));
+        overlay.querySelector("#cv-episode-panel").classList.toggle("hidden", !expanded);
+        overlay.classList.toggle("has-episodes", expanded);
+        showTopbar();
     });
-    overlay.querySelector("#cv-topbar-fullscreen").addEventListener("click", toggleFullscreen);
-    overlay.querySelector("#cv-topbar-skip").addEventListener("click", skipIntro);
     overlay.querySelector("#cv-skip-intro").addEventListener("click", skipIntro);
-    overlay.querySelector("#cv-topbar-next-ep").addEventListener("click", playNextEpisode);
     seasonSelect.addEventListener("change", () => {
         current.season = Number(seasonSelect.value);
         current.episode = 1;
         loadIframe();
         loadEpisodes();
     });
-    overlay.addEventListener("mousemove", showTopbar);
+    overlay.addEventListener("pointermove", showTopbar);
+    overlay.addEventListener("touchstart", showTopbar, { passive: true });
     overlay.addEventListener("focusin", showTopbar);
     overlay.addEventListener("click", event => {
         if (event.target === overlay) closePlayer();
     });
-    ["fullscreenchange", "webkitfullscreenchange"].forEach(eventName => document.addEventListener(eventName, updateFullscreenUI));
 }
 
 function showTopbar() {
     const topbar = document.getElementById("cv-player-topbar");
-    topbar?.classList.remove("hidden");
+    topbar?.classList.remove("is-idle");
     window.clearTimeout(autoHideTimer);
-    autoHideTimer = window.setTimeout(() => topbar?.classList.add("hidden"), 3500);
+    autoHideTimer = window.setTimeout(() => {
+        if (!topbar?.contains(document.activeElement) && !overlay?.classList.contains("has-episodes")) topbar?.classList.add("is-idle");
+    }, 3500);
 }
 
-function loadIframe() {
-    if (!iframe || !loadingEl) return;
-    recordWatchSelection({ ...current, serverKey: current.server.key }).then(saved => {
-        if (!saved) showToast("History could not be saved. Allow browser storage to keep your selection.");
-    }).catch(() => showToast("History could not be saved."));
-    loadingEl.classList.remove("hidden");
+function loadIframe(fallback = false) {
+    if (!iframe || !loadingEl || !overlay.classList.contains("open")) return;
+    const cycle = ++loadCycle;
+    if (!fallback) attemptedSources = new Set();
+    attemptedSources.add(current.server.key);
     window.clearTimeout(loadingTimer);
-    iframe.src = "about:blank";
-
-    let source = current.type === "movie"
+    document.getElementById("cv-retry-stream").classList.add("hidden");
+    document.getElementById("cv-loading-status").textContent = fallback ? "Trying another connection…" : "Finding your stream…";
+    loadingEl.classList.remove("hidden");
+    const source = current.type === "movie"
         ? current.server.movie(current.id)
         : current.server.tv(current.id, current.season, current.episode);
-    const episodeTag = document.getElementById("cv-player-ep-tag");
-    const nextButton = document.getElementById("cv-topbar-next-ep");
-    if (current.type === "tv") {
-        episodeTag.textContent = `S${current.season} - E${current.episode}`;
-        episodeTag.classList.remove("hidden");
-        nextButton.classList.remove("hidden");
-    } else {
-        episodeTag.classList.add("hidden");
-        nextButton.classList.add("hidden");
+    const nextFrame = iframe.cloneNode(false);
+    function advance() {
+        if (cycle !== loadCycle || !overlay.classList.contains("open")) return;
+        window.clearTimeout(loadingTimer);
+        const next = SERVERS.find(server => !attemptedSources.has(server.key));
+        if (next) {
+            current.server = next;
+            loadIframe(true);
+        } else {
+            ++loadCycle;
+            nextFrame.src = "about:blank";
+            loadingEl.querySelector(".cv-spinner").classList.add("hidden");
+            document.getElementById("cv-loading-status").textContent = "We couldn’t connect. Please try again in a moment.";
+            document.getElementById("cv-retry-stream").classList.remove("hidden");
+        }
     }
-
-    window.setTimeout(() => {
-        if (!overlay?.classList.contains("open")) return;
-        iframe.onload = () => {
-            loadingEl.classList.add("hidden");
-        };
-        iframe.src = source;
-        loadingTimer = window.setTimeout(() => {
-            loadingEl.classList.add("hidden");
-            showSkipButton();
-        }, 3500);
-    }, 150);
+    nextFrame.addEventListener("load", () => {
+        if (cycle !== loadCycle || !overlay.classList.contains("open")) return;
+        window.clearTimeout(loadingTimer);
+        loadingEl.classList.add("hidden");
+        recordWatchSelection({ ...current, serverKey: current.server.key }).catch(() => {});
+    }, { once: true });
+    nextFrame.addEventListener("error", advance, { once: true });
+    loadingEl.querySelector(".cv-spinner").classList.remove("hidden");
+    nextFrame.src = source;
+    iframe.replaceWith(nextFrame);
+    iframe = nextFrame;
+    // Cross-origin frames expose navigation events, not playback state.
+    // Only retry startup failures; never interrupt a frame that has loaded.
+    loadingTimer = window.setTimeout(advance, 18000);
 }
 
 async function loadEpisodes() {
@@ -275,17 +257,21 @@ function playNextEpisode() {
 }
 
 export function openPlayer(id, mediaType, title, seasons = [], options = {}) {
+    previousFocus = document.activeElement;
     buildOverlay();
     const playerServer = SERVERS.find(server => server.key === options.serverKey) || SERVERS[0];
     current = { id, type: mediaType, title, posterPath: options.posterPath || null,
         season: Number.isInteger(options.season) && options.season > 0 ? options.season : 1,
         episode: Number.isInteger(options.episode) && options.episode > 0 ? options.episode : 1,
         server: playerServer };
-    overlay.querySelector("#cv-player-title").textContent = title || "Now Playing";
-    overlay.querySelectorAll(".cv-server-btn").forEach(button => button.classList.toggle("active", button.dataset.server === playerServer.key));
-    overlay.querySelector("#cv-episode-panel").classList.toggle("hidden", mediaType !== "tv");
+    overlay.querySelector("#cv-episode-panel").classList.add("hidden");
+    overlay.classList.remove("has-episodes");
+    const episodesToggle = overlay.querySelector("#cv-topbar-episodes");
+    episodesToggle.classList.toggle("hidden", mediaType !== "tv");
+    episodesToggle.setAttribute("aria-expanded", "false");
     overlay.classList.add("open");
     document.body.style.overflow = "hidden";
+    overlay.focus({ preventScroll: true });
     showTopbar();
     loadIframe();
     if (mediaType === "tv") {
@@ -303,7 +289,10 @@ export function openPlayer(id, mediaType, title, seasons = [], options = {}) {
 
 export function closePlayer() {
     if (!overlay) return;
+    ++loadCycle;
     overlay.classList.remove("open");
+    iframe.src = "about:blank";
+    previousFocus?.focus?.({ preventScroll: true });
     document.body.style.overflow = "";
     window.clearTimeout(loadingTimer);
     window.clearTimeout(autoHideTimer);
@@ -312,9 +301,10 @@ export function closePlayer() {
 }
 
 document.addEventListener("keydown", event => {
-    if (!overlay?.classList.contains("open") || event.target.isContentEditable
-        || ["INPUT", "SELECT", "TEXTAREA", "BUTTON"].includes(event.target.tagName)) return;
+    if (!overlay?.classList.contains("open")) return;
     if (event.key === "Escape") return isFullscreen() ? toggleFullscreen() : closePlayer();
+    if (event.target.isContentEditable
+        || ["INPUT", "SELECT", "TEXTAREA", "BUTTON"].includes(event.target.tagName)) return;
     if (event.key.toLowerCase() === "f") return toggleFullscreen();
     if (event.key.toLowerCase() === "s") return skipIntro();
     if (event.key.toLowerCase() === "n" && current.type === "tv") return playNextEpisode();

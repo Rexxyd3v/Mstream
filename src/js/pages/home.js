@@ -1,10 +1,10 @@
 import { renderSpotlight, initializeMovieRail } from "../movie-slides.js";
-import { getMoviePreferences, recordMovieInterest } from "../recommendations.js";
+import { getMoviePreferences } from "../recommendations.js";
+import { createMediaCard } from "../media-card.js";
 import { initializeHistoryView } from "../history-view.js";
 import { fetchCatalogPage, fetchGenres } from "../catalog.js";
 
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
-const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500";
 const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
 let catalogRequest;
 let resultPage = 1;
@@ -186,30 +186,8 @@ function displayMovies(movies, targetGrid = document.getElementById("movieGrid")
             return;
         }
 
-        const card = document.createElement("article");
-        const title = movie.title || movie.name || "Untitled";
-        const type = movie.media_type === "tv" ? "tv" : "movie";
-        const date = movie.release_date || movie.first_air_date || "Unknown";
-        card.className = "cursor-pointer overflow-hidden";
+        const card = createMediaCard(movie);
         card.style.animation = `cardFadeIn 0.6s ease-out backwards ${(Math.min(index, 7) * 0.05)}s`;
-        card.innerHTML = `
-            <a href="./details.html?id=${movie.id}&type=${type}" class="block">
-                <img src="${IMAGE_BASE_URL}${movie.poster_path}" alt="" loading="lazy" class="h-64 w-full object-cover">
-                <div class="p-4">
-                    <h3 class="text-sm font-semibold text-white"></h3>
-                    <div class="mt-2 flex items-center justify-between text-xs text-neutral-500">
-                        <span>${date.slice(0, 4)} · ${type === "tv" ? "Series" : "Movie"}</span>
-                        <span>${movie.vote_average?.toFixed(1) || "N/A"}</span>
-                    </div>
-                </div>
-            </a>
-        `;
-        card.querySelector("h3").textContent = title;
-        card.querySelector("img").alt = title;
-
-        card.querySelector("a")?.addEventListener("click", () => {
-            recordMovieInterest(movie);
-        });
         grid.appendChild(card);
     });
     initializeMovieRail(grid);

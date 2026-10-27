@@ -15,13 +15,9 @@
     <!-- NAV -->
     <header class="glass-nav sticky top-0 z-50">
         <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-            <a href="./home.html" class="flex items-center gap-2.5 shrink-0">
-                <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-neutral-300 to-neutral-500 shadow-lg">
-                    <svg class="h-4 w-4 text-black" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"/>
-                    </svg>
-                </div>
-                <span class="text-lg font-bold tracking-tight text-white">MStream</span>
+            <a href="./home.html" class="brand">
+                <img class="brand-logo" src="../assets/letter-m.png" alt="" aria-hidden="true">
+                <span>MStream</span>
             </a>
             <nav aria-label="Main navigation" class="hidden items-center gap-1 text-sm md:flex">
                 <a href="./home.html" class="rounded-lg px-3.5 py-2 text-neutral-400 hover:bg-white/5 hover:text-white">Home</a>
@@ -110,6 +106,18 @@
                 </div>
             </div>
         </div>
+        <section class="detail-discovery" id="detailCast" aria-labelledby="detailCastTitle" hidden>
+            <div class="discovery-heading"><div><p class="eyebrow">THE PEOPLE BEHIND THE STORY</p><h2 id="detailCastTitle">Meet the cast</h2></div><span>Tap an actor to explore their titles</span></div>
+            <div id="detailCastList" class="detail-cast-list" role="group" aria-label="Cast members"></div>
+            <p id="detailCastStatus" class="discovery-status" role="status"></p>
+        </section>
+        <section class="detail-discovery" id="detailRecommendations" aria-labelledby="detailRecommendationsTitle" hidden>
+            <div class="discovery-heading"><div><p class="eyebrow">KEEP YOUR MOVIE NIGHT GOING</p><h2 id="detailRecommendationsTitle">What to watch next</h2></div></div>
+            <p id="detailRecommendationsStatus" class="discovery-status" role="status" aria-live="polite"></p>
+            <div id="collectionRecommendations" class="discovery-group" hidden></div>
+            <div id="relatedRecommendations" class="discovery-group" hidden></div>
+            <div id="castRecommendations" class="discovery-group" hidden></div>
+        </section>
     </main>
 
     <!-- FOOTER -->

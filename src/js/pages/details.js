@@ -3,6 +3,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../firebase.js";
 import { isUserFavorite, removeUserFavorite, saveUserFavorite } from "../favorites-store.js";
 import { getLastSelection } from "../watch-history.js";
+import { initializeDetailsDiscovery } from "../details-discovery.js";
 
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
 const IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500";
@@ -60,7 +61,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     try {
         const response = await fetch(
-            `${TMDB_BASE_URL}/${mediaType}/${mediaId}?api_key=${TMDB_API_KEY}&language=en-US`
+            `${TMDB_BASE_URL}/${mediaType}/${mediaId}?api_key=${TMDB_API_KEY}&language=en-US&append_to_response=credits,recommendations,similar`
         );
 
         if (!response.ok) {
@@ -68,6 +69,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         const media = await response.json();
+        initializeDetailsDiscovery(media, mediaType).catch(() => {
+            document.getElementById("detailRecommendationsStatus").textContent = "Recommendations couldn’t load right now. Please try again later.";
+            document.getElementById("detailRecommendations").removeAttribute("aria-busy");
+        });
         const poster = document.getElementById("detailPoster");
         const title = document.getElementById("detailTitle");
         const overview = document.getElementById("detailOverview");
@@ -85,7 +90,10 @@ document.addEventListener("DOMContentLoaded", async () => {
             voteAverage: media.vote_average,
         };
 
-        if (poster) poster.src = media.poster_path ? IMAGE_BASE_URL + media.poster_path : "";
+        if (poster) {
+            poster.src = media.poster_path ? IMAGE_BASE_URL + media.poster_path : "";
+            poster.alt = `${item.title || "Title"} poster`;
+        }
         if (title) title.textContent = item.title || "Untitled";
         if (overview) overview.textContent = item.overview || "No description available.";
         if (date) date.textContent = item.releaseDate || "Unknown";

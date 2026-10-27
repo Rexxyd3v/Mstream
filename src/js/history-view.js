@@ -30,7 +30,7 @@ export function initializeHistoryView() {
             const title = document.createElement("h3");
             title.textContent = item.title;
             const selection = document.createElement("p");
-            selection.textContent = `${item.type === "tv" ? `S${item.season} · E${item.episode} · ` : ""}Server ${["vidsrcme", "vidsrcxyz", "vidsrccc", "moviesapi", "smashy", "111movies"].indexOf(item.serverKey) + 1}`;
+            selection.textContent = item.type === "tv" ? `Season ${item.season} · Episode ${item.episode}` : "Ready to watch";
             const date = document.createElement("time");
             date.dateTime = new Date(item.openedAt).toISOString();
             date.textContent = `Opened ${new Date(item.openedAt).toLocaleDateString()}`;
